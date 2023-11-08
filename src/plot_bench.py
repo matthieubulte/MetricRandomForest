@@ -7,6 +7,10 @@ def make_forest_df(df, n_cores=20, n_trees=100, Ns=[100,200,400]):
     _df = df.groupby(['N', 'p', 'method']).mean().reset_index().copy()
     
     has_dist = lambda method: 1.0 * (method in ['medoid_2means', 'medoid_greedy'])
+
+    # dist_duration has been parallelized
+    # tree time is based on one tree
+
     O = lambda method, N: has_dist(method) * _df[_df.N == N].dist_duration.max()
     T = lambda method, N, p: _df[(_df.method == method) & (_df.N == N) & (_df.p == p)].fitting_duration.iloc[0]
     TF = lambda method, N, p, n_trees, n_cores: O(method, N) + (1.0*n_trees / n_cores) * T(method, int(N/2), p)
