@@ -7,22 +7,27 @@ def make_forest_df(df, n_cores=20, n_trees=100, Ns=[100,200,400]):
     _df = df.groupby(['N', 'p', 'method']).mean().reset_index().copy()
     
     has_dist = lambda method: 1.0 * (method in ['medoid_2means', 'medoid_greedy'])
+    O = lambda r: has_dist(r['method']) * _df[_df.N == r['N']].dist_duration.max()
+    _df['duration'] += _df[['method', 'N']].apply(O)
 
-    # dist_duration has been parallelized
-    # tree time is based on one tree
+    return _df
+    # has_dist = lambda method: 1.0 * (method in ['medoid_2means', 'medoid_greedy'])
 
-    O = lambda method, N: has_dist(method) * _df[_df.N == N].dist_duration.max()
-    T = lambda method, N, p: _df[(_df.method == method) & (_df.N == N) & (_df.p == p)].fitting_duration.iloc[0]
-    TF = lambda method, N, p, n_trees, n_cores: O(method, N) + (1.0*n_trees / n_cores) * T(method, int(N/2), p)
+    # # dist_duration has been parallelized
+    # # tree time is based on one tree
 
-    rows = []
-    for N in Ns:
-        for p in _df.p.unique():
-            for method in _df.method.unique():
-                # print(N,p,method, O(method, N))
-                rows.append((method, N, p, TF(method, N, p, n_trees, n_cores)))
+    # O = lambda method, N: has_dist(method) * _df[_df.N == N].dist_duration.max()
+    # T = lambda method, N, p: _df[(_df.method == method) & (_df.N == N) & (_df.p == p)].fitting_duration.iloc[0]
+    # TF = lambda method, N, p, n_trees, n_cores: O(method, N) + (1.0*n_trees / n_cores) * T(method, int(N/2), p)
 
-    return pd.DataFrame(rows, columns=['method', 'N', 'p', 'duration'])
+    # rows = []
+    # for N in Ns:
+    #     for p in _df.p.unique():
+    #         for method in _df.method.unique():
+    #             # print(N,p,method, O(method, N))
+    #             rows.append((method, N, p, TF(method, N, p, n_trees, n_cores)))
+
+    # return pd.DataFrame(rows, columns=['method', 'N', 'p', 'duration'])
 
 
 def plot_forest_df(forest_df, ref_method=None):
@@ -36,7 +41,7 @@ def plot_forest_df(forest_df, ref_method=None):
     forest_df['Method'] = forest_df.method.map({
         'cart_2means': 'RFWLCFR',
         'medoid_greedy': 'MRF',
-        # 'medoid_2means': 'MRF2M'
+        'medoid_2means': 'MRF2M'
     })
 
     grid = sns.FacetGrid(
@@ -45,7 +50,7 @@ def plot_forest_df(forest_df, ref_method=None):
         hue="Method",
         hue_order=[
             'MRF', 
-            # 'MRF2M', 
+            'MRF2M', 
             'RFWLCFR'
         ])
 
@@ -88,7 +93,7 @@ def plot_errors(df):
     df['Method'] = df.method.map({
         'cart_2means': 'RFWLCFR',
         'medoid_greedy': 'MRF',
-        # 'medoid_2means': 'MRF2M'
+        'medoid_2means': 'MRF2M'
     })
     sns.set_style("whitegrid")
     sns.set_context("paper", rc={
@@ -103,7 +108,7 @@ def plot_errors(df):
         hue="Method",
         hue_order=[
             'MRF',
-            # 'MRF2M',
+            'MRF2M',
             'RFWLCFR'
         ],
         kind='box')
